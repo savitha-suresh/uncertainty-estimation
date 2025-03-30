@@ -5,6 +5,8 @@ import seaborn as sns
 from scipy import stats
 from sklearn.neighbors import KernelDensity
 import torch
+from sklearn.datasets import fetch_california_housing
+from sklearn.preprocessing import MinMaxScaler
 
 def compute_kde(data, feature_idx, bandwidth=0.1, n_points=1000):
     """Compute KDE for a specific feature"""
@@ -243,3 +245,15 @@ def compare_two_datasets(x_1, x_2, feature_names=None, dataset_names=None):
 # 
 # print(kl_df)
 # plt.show()
+
+data = fetch_california_housing()
+df = pd.DataFrame(data.data, columns=data.feature_names)
+X = df
+feature_list = X.columns.tolist()
+X = X.astype('float32')
+scaler = MinMaxScaler()
+X = pd.DataFrame(scaler.fit_transform(X), columns=X.columns)
+X = torch.tensor(X.values)
+datasets = ['og', 'gen']
+x_last = torch.load('X_last.pt')
+kl_df, kl_fig, dist_fig = compare_two_datasets(X, x_last, feature_list, datasets)

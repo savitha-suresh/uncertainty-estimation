@@ -7,11 +7,13 @@ from models.v2 import DiffusionModelV2
 from models.v1 import DiffusionModel
 import logging
 import sys 
-from tqdm import tqdm
+from sklearn.preprocessing import MinMaxScaler
+from sklearn.datasets import fetch_california_housing
+
 
 logging.basicConfig(level=logging.INFO, stream=sys.stdout)
 
-diffusion_steps = 250  # Number of steps in the diffusion process
+diffusion_steps = 40  # Number of steps in the diffusion process
 
 # Set noising variances betas as in Nichol and Dariwal paper (https://arxiv.org/pdf/2102.09672.pdf)
 s = 0.008
@@ -30,15 +32,15 @@ def noise(Xbatch, t):
     return noised, eps
 
 def train_model(model, data, diffusion_steps, device):
-    epochs = 100
-    batch_size = 10
+    epochs = 15
+    batch_size = 100
 
     loss_fn = nn.MSELoss()
-    optimizer = optim.Adam(model.parameters(), lr=0.00001)
+    optimizer = optim.Adam(model.parameters(), lr=0.0001)
     
     for epoch in range(epochs):
         epoch_loss = steps = 0
-        for i in tqdm(range(0, len(data), batch_size)):
+        for i in range(0, len(data), batch_size):
             Xbatch = data[i:i+batch_size]
             timesteps = torch.randint(0, diffusion_steps, size=[len(Xbatch), 1])
             noised, eps = noise(Xbatch, timesteps)
@@ -49,7 +51,7 @@ def train_model(model, data, diffusion_steps, device):
             optimizer.step()    
             epoch_loss += loss
             steps += 1
-            logging.info(f"Epoch {epoch} loss = {epoch_loss / steps}")
+        logging.info(f"Epoch {epoch} loss = {epoch_loss / steps}")
 
 
 def sample_ddpm(model, nsamples, nfeatures, mc_samples=30, device='cpu'):
@@ -57,7 +59,7 @@ def sample_ddpm(model, nsamples, nfeatures, mc_samples=30, device='cpu'):
     model.train()
     samples = torch.zeros(mc_samples, nsamples, nfeatures).to(device)
     with torch.no_grad():
-        for i in tqdm(range(mc_samples)):
+        for i in range(mc_samples):
             x = torch.randn(size=(nsamples, nfeatures)).to(device)
             xt = [x]
             for t in range(diffusion_steps-1, 0, -1):
@@ -72,30 +74,37 @@ def sample_ddpm(model, nsamples, nfeatures, mc_samples=30, device='cpu'):
                     x += std * torch.randn(size=(nsamples, nfeatures)).to(device)
                 xt += [x]
             samples[i] = x
+            logging.info(f"Sample {i} done")
     return x, xt, samples
 
 
 def main():
-    air_quality = fetch_ucirepo(id=360)
-    X = air_quality.data.features
-    X['Time'] = pd.to_datetime(X['Time'], format='%H:%M:%S')
-    X['Hour'] = X['Time'].dt.hour
-    X = X.drop('Date', axis=1)
-    X = X.drop('Time', axis=1)
+    # air_quality = fetch_ucirepo(id=360)
+    # X = air_quality.data.features
+    # X['Time'] = pd.to_datetime(X['Time'], format='%H:%M:%S')
+    # X['Hour'] = X['Time'].dt.hour
+    # X = X.drop('Date', axis=1)
+    # X = X.drop('Time', axis=1)
+    # X = X.astype('float32')
+    data = fetch_california_housing()
+    df = pd.DataFrame(data.data, columns=data.feature_names)
+    X = df
     X = X.astype('float32')
+    scaler = MinMaxScaler()
+    X = pd.DataFrame(scaler.fit_transform(X), columns=X.columns)
 
     logging.info("Training model")
     X = torch.tensor(X.values)
 
     nfeatures = X.shape[1]
-    y = air_quality.data.targets
+
     model = DiffusionModelV2(nfeatures=nfeatures, nblocks=8, hidden_layer=512)
     
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     model.to(device)
     X.to(device)
     train_model(model, X, diffusion_steps, device)
-    X_last, X_hist, mc_samples = sample_ddpm(model, 10000, nfeatures)
+    X_last, X_hist, mc_samples = sample_ddpm(model, 10000, nfeatures, device=device)
     torch.save(mc_samples, 'mc_samples.pt')
     torch.save(X_last, 'X_last.pt')
 
