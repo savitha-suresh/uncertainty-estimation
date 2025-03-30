@@ -5,6 +5,11 @@ from ucimlrepo import fetch_ucirepo
 import pandas as pd
 from models.v2 import DiffusionModelV2
 from models.v1 import DiffusionModel
+import logging
+import sys 
+from tqdm import tqdm
+
+logging.basicConfig(level=logging.INFO, stream=sys.stdout)
 
 diffusion_steps = 250  # Number of steps in the diffusion process
 
@@ -33,7 +38,7 @@ def train_model(model, data, diffusion_steps, device):
     
     for epoch in range(epochs):
         epoch_loss = steps = 0
-        for i in range(0, len(data), batch_size):
+        for i in tqdm(range(0, len(data), batch_size)):
             Xbatch = data[i:i+batch_size]
             timesteps = torch.randint(0, diffusion_steps, size=[len(Xbatch), 1])
             noised, eps = noise(Xbatch, timesteps)
@@ -44,8 +49,7 @@ def train_model(model, data, diffusion_steps, device):
             optimizer.step()    
             epoch_loss += loss
             steps += 1
-        if epoch % 10 == 0:
-            print(f"Epoch {epoch} loss = {epoch_loss / steps}")
+            logging.info(f"Epoch {epoch} loss = {epoch_loss / steps}")
 
 
 def sample_ddpm(model, nsamples, nfeatures, mc_samples=30, device='cpu'):
@@ -53,7 +57,7 @@ def sample_ddpm(model, nsamples, nfeatures, mc_samples=30, device='cpu'):
     model.train()
     samples = torch.zeros(mc_samples, nsamples, nfeatures).to(device)
     with torch.no_grad():
-        for i in range(mc_samples):
+        for i in tqdm(range(mc_samples)):
             x = torch.randn(size=(nsamples, nfeatures)).to(device)
             xt = [x]
             for t in range(diffusion_steps-1, 0, -1):
@@ -80,7 +84,7 @@ def main():
     X = X.drop('Time', axis=1)
     X = X.astype('float32')
 
-
+    logging.info("Training model")
     X = torch.tensor(X.values)
 
     nfeatures = X.shape[1]
