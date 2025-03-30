@@ -13,7 +13,7 @@ from sklearn.datasets import fetch_california_housing
 
 logging.basicConfig(level=logging.INFO, stream=sys.stdout)
 
-diffusion_steps = 40  # Number of steps in the diffusion process
+diffusion_steps = 100  # Number of steps in the diffusion process
 
 # Set noising variances betas as in Nichol and Dariwal paper (https://arxiv.org/pdf/2102.09672.pdf)
 s = 0.008
@@ -32,11 +32,11 @@ def noise(Xbatch, t):
     return noised, eps
 
 def train_model(model, data, diffusion_steps, device):
-    epochs = 15
-    batch_size = 100
+    epochs = 20
+    batch_size = 16
 
     loss_fn = nn.MSELoss()
-    optimizer = optim.Adam(model.parameters(), lr=0.0001)
+    optimizer = optim.Adam(model.parameters(), lr=0.00001)
     
     for epoch in range(epochs):
         epoch_loss = steps = 0

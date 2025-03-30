@@ -257,3 +257,4 @@ X = torch.tensor(X.values)
 datasets = ['og', 'gen']
 x_last = torch.load('X_last.pt')
 kl_df, kl_fig, dist_fig = compare_two_datasets(X, x_last, feature_list, datasets)
+print(kl_df)
