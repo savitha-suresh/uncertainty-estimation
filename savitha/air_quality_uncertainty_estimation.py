@@ -78,22 +78,30 @@ def sample_ddpm(model, nsamples, nfeatures, mc_samples=30, device='cpu'):
     return x, xt, samples
 
 
-def main():
-    # air_quality = fetch_ucirepo(id=360)
-    # X = air_quality.data.features
-    # X['Time'] = pd.to_datetime(X['Time'], format='%H:%M:%S')
-    # X['Hour'] = X['Time'].dt.hour
-    # X = X.drop('Date', axis=1)
-    # X = X.drop('Time', axis=1)
-    # X = X.astype('float32')
+def get_data_air_quality():
+    air_quality = fetch_ucirepo(id=360)
+    X = air_quality.data.features
+    X['Time'] = pd.to_datetime(X['Time'], format='%H:%M:%S')
+    #X['Hour'] = X['Time'].dt.hour
+    X = X.drop('Date', axis=1)
+    X = X.drop('Time', axis=1)
+    X = X.astype('float32')
+    scaler = MinMaxScaler()
+    X = pd.DataFrame(scaler.fit_transform(X), columns=X.columns)
+    return X
+
+def get_data_california_housing():
     data = fetch_california_housing()
     df = pd.DataFrame(data.data, columns=data.feature_names)
     X = df
     X = X.astype('float32')
     scaler = MinMaxScaler()
     X = pd.DataFrame(scaler.fit_transform(X), columns=X.columns)
+    return X
 
-    logging.info("Training model")
+
+def main():
+    X = get_data_air_quality()
     X = torch.tensor(X.values)
 
     nfeatures = X.shape[1]
