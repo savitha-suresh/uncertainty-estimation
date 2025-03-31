@@ -1,0 +1,21 @@
+# Ignore PyCharm-generated configuration files
+.idea/
+*.iml
+
+# Python Caching Files
+__pycache__/
+*.pyc
+
+# virtualised environment
+venv/
+.env/
+
+# systme files
+.DS_Store
+Thumbs.db
+
+# log files
+*.log
+
+# cache files
+cache/
