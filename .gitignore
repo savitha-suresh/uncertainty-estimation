@@ -1,0 +1,6 @@
+*.gz
+*.csv
+Chocka/data/FashionMNIST/raw/t10k-images-idx3-ubyte
+Chocka/data/FashionMNIST/raw/t10k-labels-idx1-ubyte
+Chocka/data/FashionMNIST/raw/train-images-idx3-ubyte
+Chocka/data/FashionMNIST/raw/train-labels-idx1-ubyte
