@@ -99,14 +99,14 @@ def compare_distributions(x_1, x_2, feature_names=None, bandwidth=0.1):
         })
     
     # Create and return DataFrame
-    return pd.DataFrame(results).sort_values('Symmetric KL', ascending=False)
+    return pd.DataFrame(results).sort_values('KL(X₂||X₁)', ascending=False)
 
 def plot_kl_divergence_by_feature(kl_df, figsize=(10, 6)):
     """Plot KL divergence for each feature"""
     plt.figure(figsize=figsize)
     
     # Create bar plot for symmetric KL divergence
-    sns.barplot(x='Feature', y='Symmetric KL', data=kl_df)
+    sns.barplot(x='Feature', y='KL(X₂||X₁)', data=kl_df)
     plt.xticks(rotation=45, ha='right')
     plt.title('KL Divergence Between Datasets by Feature')
     plt.tight_layout()
@@ -251,6 +251,11 @@ X = get_data_air_quality()
 feature_list = X.columns.tolist()
 X = torch.tensor(X.values)
 datasets = ['og', 'gen']
-x_last = torch.load('X_last.pt')
+device = 'cuda' if torch.cuda.is_available() else 'cpu'
+
+x_last = torch.load('X_last.pt', map_location=device)
+
+x_last.to(device)
 kl_df, kl_fig, dist_fig = compare_two_datasets(X, x_last, feature_list, datasets)
 print(kl_df)
+plt.show()
