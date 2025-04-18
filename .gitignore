@@ -1,24 +1,30 @@
-# Ignore PyCharm-generated configuration files
+# PyCharm
 .idea/
 *.iml
 
-# Python Caching Files
+# Python cache
 __pycache__/
 *.pyc
 
-# virtualised environment
+# Virtual environments
 venv/
 .env/
 
-# systme files
+# System files
 .DS_Store
 Thumbs.db
 
-# log files
+# Logs
 *.log
 
-# cache files
+# Cache
 cache/
 
-# data
+# Data folders and files
 **/data/
+*.gz
+*.csv
+Chocka/data/FashionMNIST/raw/t10k-images-idx3-ubyte
+Chocka/data/FashionMNIST/raw/t10k-labels-idx1-ubyte
+Chocka/data/FashionMNIST/raw/train-images-idx3-ubyte
+Chocka/data/FashionMNIST/raw/train-labels-idx1-ubyte
