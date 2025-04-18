@@ -1,3 +1,27 @@
+# PyCharm
+.idea/
+*.iml
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Virtual environments
+venv/
+.env/
+
+# System files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Cache
+cache/
+
+# Data folders and files
+**/data/
 *.gz
 *.csv
 Chocka/data/FashionMNIST/raw/t10k-images-idx3-ubyte
