@@ -4,6 +4,10 @@ from air_quality_uncertainty_estimation import get_data_air_quality
 import torch
 import pandas as pd
 import matplotlib.pyplot as plt
+import torch
+import numpy as np
+from joblib import Parallel, delayed
+
 
 def kl_divergence_kde(P, Q, num_points=1000):
     """
@@ -55,20 +59,26 @@ device = 'cuda' if torch.cuda.is_available() else 'cpu'
 #x_last = torch.load('X_last.pt', map_location=device)
 x_last = torch.load('x_last_v1.pt', map_location=device)
 mc_samples = torch.load('mc_samples_v1.pt', map_location=device)
+mc_samples = mc_samples.numpy()  # Convert to NumPy for joblib (if not already)
 
-all_kls = []
-for i in range(mc_samples.shape[0]):
-    for j in range(mc_samples.shape[0]):
-        if i != j:
-            kl_div = kl_divergence_kde(mc_samples[i], mc_samples[j])
-            all_kls.append(kl_div)
-            print(f"KL divergence between sample {i} and {j}: {kl_div}")
+n_samples = mc_samples.shape[0]
 
-print(len(all_kls))
-all_kls = np.array(all_kls)
-mean_kls = np.mean(all_kls, axis=0)
+def compute_kl_pair(i, j):
+    kl = kl_divergence_kde(mc_samples[i], mc_samples[j])
+    return kl
+
+# 🧵 Parallel compute
+results = Parallel(n_jobs=-1)(delayed(compute_kl_pair)(i, j)
+                              for i in range(n_samples)
+                              for j in range(i + 1, n_samples))
+
+# Convert to numpy array
+results = np.array(results)
+print(f"Total KL pairs computed: {len(results)}")
+
+# Aggregate across all pairs (mean per feature)
+mean_kls = results.mean(axis=0)
 print(f"Mean KL divergence per feature: {mean_kls}")
-
 
 
 def kl_divergence_kde_with_plot(P, 
@@ -124,8 +134,8 @@ def kl_divergence_kde_with_plot(P,
             plt.show()
 
     # Bar chart of KL divergence
-    kl_divs = sorted(kl_divs, reverse=True)
-    feature_names = sorted(feature_names, key=lambda x: kl_divs[feature_names.index(x)], reverse=True)
+    # kl_divs = sorted(kl_divs, reverse=True)
+    # feature_names = sorted(feature_names, key=lambda x: kl_divs[feature_names.index(x)], reverse=True)
     plt.figure(figsize=(10, 5))
     plt.bar(feature_names, kl_divs, color='teal', alpha=0.8)
     plt.xticks(rotation=45, ha='right')
@@ -135,8 +145,14 @@ def kl_divergence_kde_with_plot(P,
     plt.tight_layout()
     plt.show()
 
-    return pd.Series(kl_divs, index=feature_names)
+    kl_df =  pd.Series(kl_divs, index=feature_names)
+    sorted_series_desc = kl_df.sort_values(ascending=False)
+    return sorted_series_desc
 
 
-# kl_series = kl_divergence_kde_with_plot(X, x_last, feature_list)
-# print(kl_series)
+
+kl_series = kl_divergence_kde_with_plot(X, x_last, feature_list)
+print(kl_series)
+kl_df =  pd.Series(mean_kls, index=feature_list)
+sorted_series_desc = kl_df.sort_values(ascending=False)
+print(sorted_series_desc)

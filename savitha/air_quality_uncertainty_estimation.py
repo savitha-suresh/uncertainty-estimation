@@ -106,7 +106,7 @@ def main():
 
     nfeatures = X.shape[1]
 
-    model = DiffusionModel(nfeatures=nfeatures, nblocks=8, hidden_layer=512)
+    model = DiffusionModelV2(nfeatures=nfeatures, nblocks=8, hidden_layer=512)
     
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     model.to(device)
